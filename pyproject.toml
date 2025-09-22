@@ -1,0 +1,11 @@
+[project]
+name = "rest-tutorial"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "django>=5.2.6",
+    "djangorestframework>=3.16.1",
+    "pygments>=2.19.2",
+]
