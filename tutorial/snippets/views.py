@@ -1,55 +1,41 @@
 from snippets.models import Snippet
 from snippets.serializers import SnippetSerializer
 from rest_framework.decorators import api_view
-from rest_framework import status
 from rest_framework.response import Response
-from django.http import Http404
-from rest_framework.views import APIView
-from rest_framework import generics
+
 from django.contrib.auth.models import User
 from snippets.serializers import UserSerializer
-from rest_framework import permissions
-from snippets.permissions import IsOwnerOrReadOnly
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from snippets.permissions import IsOwnerOrReadOnly
 from rest_framework.reverse import reverse
 
+from rest_framework import permissions
 from rest_framework import renderers
+from rest_framework.decorators import action
+from rest_framework import viewsets
 
-class SnippetHighlight(generics.GenericAPIView):
+class SnippetViewSet(viewsets.ModelViewSet):
+    """
+    この ViewSet は、自動的に list、create、retrieve、update、および destroy の各操作を提供します。
+
+    さらに、追加で highlight 操作も提供しています。
+    """
     queryset = Snippet.objects.all()
-    renderer_classes = [renderers.StaticHTMLRenderer]
+    serializer_class = SnippetSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly]
 
-    def get(self, request, *args, **kwargs):
+    @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
+    def highlight(self, request, *args, **kwargs):
         snippet = self.get_object()
         return Response(snippet.highlighted)
 
-@api_view(['GET'])
-def api_root(request, format=None):
-    return Response({
-        'users': reverse('user-list', request=request, format=format),
-        'snippets': reverse('snippet-list', request=request, format=format)
-    })
-
-
-class SnippetList(generics.ListCreateAPIView):
-    queryset = Snippet.objects.all()
-    serializer_class = SnippetSerializer
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-        
-class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Snippet.objects.all()
-    serializer_class = SnippetSerializer
-    
-class UserList(generics.ListAPIView):
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    このViewSetは自動的に list と retrieve の操作を提供します。
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
-
-class UserDetail(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
